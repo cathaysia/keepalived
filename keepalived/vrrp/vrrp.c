@@ -110,6 +110,16 @@ bool do_network_timestamp;
 bool do_checksum_debug;
 #endif
 
+static void send_message_when_master(void){
+    log_message(LOG_INFO, "Enter custom master hook");
+    log_message(LOG_INFO, "Exit custom master hook");
+}
+
+static void send_message_when_backup(void){
+    log_message(LOG_INFO, "Enter custom backup hook");
+    log_message(LOG_INFO, "Exit custom backup hook");
+}
+
 static void
 vrrp_notify_fifo_script_exit(__attribute__((unused)) thread_ref_t thread)
 {
@@ -1796,6 +1806,7 @@ vrrp_state_leave_master(vrrp_t * vrrp, bool advF)
 	if (vrrp->wantstate == VRRP_STATE_BACK) {
 		log_message(LOG_INFO, "(%s) Entering BACKUP STATE", vrrp->iname);
 		vrrp->preempt_time.tv_sec = 0;
+        send_message_when_backup();
 	}
 	else if (vrrp->wantstate == VRRP_STATE_FAULT) {
 		log_message(LOG_INFO, "(%s) Entering FAULT STATE", vrrp->iname);
@@ -1822,9 +1833,11 @@ void
 vrrp_state_leave_fault(vrrp_t * vrrp)
 {
 	/* set the new vrrp state */
-	if (vrrp->wantstate == VRRP_STATE_MAST)
+	if (vrrp->wantstate == VRRP_STATE_MAST){
+        send_message_when_master();
 		vrrp_state_goto_master(vrrp);
-	else {
+    }
+    else {
 		if (vrrp->state != vrrp->wantstate)
 			log_message(LOG_INFO, "(%s) Entering %s STATE", vrrp->iname, vrrp->wantstate == VRRP_STATE_BACK ? "BACKUP" : "FAULT");
 		if (vrrp->wantstate == VRRP_STATE_FAULT && vrrp->state == VRRP_STATE_MAST) {
@@ -1837,6 +1850,7 @@ vrrp_state_leave_fault(vrrp_t * vrrp)
 		if (vrrp->state == VRRP_STATE_BACK) {
 			vrrp->preempt_time.tv_sec = 0;
 			vrrp->master_adver_int = vrrp->adver_int;
+            send_message_when_backup();
 		}
 	}
 
@@ -2011,6 +2025,7 @@ vrrp_state_master_tx(vrrp_t * vrrp)
 	if (!VRRP_VIP_ISSET(vrrp)) {
 		log_message(LOG_INFO, "(%s) Entering MASTER STATE"
 				    , vrrp->iname);
+        send_message_when_master();
 		vrrp_state_become_master(vrrp);
 		/*
 		 * If we catch the master transition
