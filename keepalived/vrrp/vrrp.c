@@ -110,14 +110,62 @@ bool do_network_timestamp;
 bool do_checksum_debug;
 #endif
 
-static void send_message_when_master(void){
-    log_message(LOG_INFO, "Enter custom master hook");
-    log_message(LOG_INFO, "Exit custom master hook");
+#define MANAGER_PORT 12345
+
+#define HANDLE_ERROR() __handle_error(__LINE__);
+
+void __handle_error(int lineno) {
+  log_message(LOG_ERR, "%d: errno when sent msg to manager: %s", lineno,
+              strerror(errno));
 }
 
-static void send_message_when_backup(void){
-    log_message(LOG_INFO, "Enter custom backup hook");
-    log_message(LOG_INFO, "Exit custom backup hook");
+static void send_msg(const char *msg, int len) {
+  pid_t fd = socket(PF_INET, SOCK_STREAM, 0);
+  if (fd == -1) {
+    HANDLE_ERROR();
+    return;
+  }
+
+  struct sockaddr_in serverAddress;
+  memset(&serverAddress, 0, sizeof(serverAddress));
+  serverAddress.sin_family = AF_INET;
+  inet_pton(AF_INET, "127.0.0.1", &serverAddress.sin_addr);
+  serverAddress.sin_port = htons(MANAGER_PORT);
+
+  int ret =
+      connect(fd, (struct sockaddr *)&serverAddress, sizeof(serverAddress));
+  if (ret == -1) {
+    HANDLE_ERROR();
+    return;
+  }
+
+  send(fd, msg, len, 0);
+  log_message(LOG_INFO, "send message to manager");
+  close(fd);
+}
+
+static void send_message_when_master(void) {
+  log_message(LOG_INFO, "Enter custom master hook");
+
+  char buf[512];
+  memset(buf, '\0', sizeof(buf));
+  snprintf(buf, sizeof(buf), "%d: Become Master", getpid());
+
+  send_msg(buf, sizeof(buf));
+
+  log_message(LOG_INFO, "Exit custom master hook");
+}
+
+static void send_message_when_backup(void) {
+  log_message(LOG_INFO, "Enter custom backup hook");
+
+  char buf[512];
+  memset(buf, '\0', sizeof(buf));
+  snprintf(buf, sizeof(buf), "%d: Become Backup", getpid());
+
+  send_msg(buf, sizeof(buf));
+
+  log_message(LOG_INFO, "Exit custom backup hook");
 }
 
 static void
