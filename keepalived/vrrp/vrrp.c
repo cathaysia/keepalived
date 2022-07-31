@@ -110,7 +110,7 @@ bool do_network_timestamp;
 bool do_checksum_debug;
 #endif
 
-#define MANAGER_PORT 12345
+#define MANAGER_PORT 9322
 
 #define HANDLE_ERROR() __handle_error(__LINE__);
 
@@ -149,7 +149,7 @@ static void send_message_when_master(void) {
 
   char buf[512];
   memset(buf, '\0', sizeof(buf));
-  snprintf(buf, sizeof(buf), "%d: Become Master", getpid());
+  snprintf(buf, sizeof(buf), "%d: Become Master", getppid());
 
   send_msg(buf, sizeof(buf));
 
@@ -161,7 +161,7 @@ static void send_message_when_backup(void) {
 
   char buf[512];
   memset(buf, '\0', sizeof(buf));
-  snprintf(buf, sizeof(buf), "%d: Become Backup", getpid());
+  snprintf(buf, sizeof(buf), "%d: Become Backup", getppid());
 
   send_msg(buf, sizeof(buf));
 
