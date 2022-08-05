@@ -2684,11 +2684,11 @@ keepalived_main(int argc, char **argv)
 #endif
 
 		/* Check if keepalived is already running */
-		if (keepalived_running(daemon_mode)) {
-			log_message(LOG_INFO, "daemon is already running");
-			report_stopped = false;
-			goto end;
-		}
+		// if (keepalived_running(daemon_mode)) {
+		// 	log_message(LOG_INFO, "daemon is already running");
+		// 	report_stopped = false;
+		// 	goto end;
+		// }
 	}
 
 	/* daemonize process */
